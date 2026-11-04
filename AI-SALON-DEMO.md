@@ -64,14 +64,14 @@ export JAVA_HOME=/path/to/jdk-21
 
 单元测试仍然通过，但后两项门禁失败，用于证明“测试结果”不等于“合并资格”。
 
-### Gitee 配置位置
+### GitHub 配置位置
 
-- 流水线：代码源选择本仓库，触发事件选择“代码评审”。
-- 构建步骤：JDK 21 环境执行 `./scripts/ci/verify.sh`。
-- PR 合并条件：要求流水线成功，失败时禁止合并。
-- 保护分支：基线分支禁止直接推送，只能通过 PR 更新。
+- Actions：`.github/workflows/quality-gate.yml`。
+- 触发方式：Pull Request 指向 `demo/baseline`。
+- 合并条件：在分支保护中将 `Merge Gate` 设为必须通过。
+- 保护分支：`Settings → Branches`，基线分支只能通过 PR 更新。
 
-Gitee 支持以 PR 创建、更新和评论为“代码评审”触发事件。具体界面名称需按账号版本实际核验。
+详细配置见 `GITHUB-DEMO-SETUP.md`。
 
 ## 演示三：Code Review 发现边界语义错误
 
@@ -89,7 +89,7 @@ requestedRows < MAX_EXPORT_ROWS
 
 现有测试覆盖 4,999、5,001 和非正数，但故意没有覆盖正好 5,000，因此 CI 仍然全绿。代码 Javadoc 则明确写明“包含边界值”，为 AI 评审提供可核对的业务契约。
 
-Gitee 上建议配置：
+GitHub 上建议配置：
 
 - 为设备管理模块指定 CodeOwner 或默认评审人；
 - 至少一名评审人批准才能合并；
@@ -99,5 +99,5 @@ Gitee 上建议配置：
 ## 现场稳定性
 
 - Pre-commit 采用实时触发。
-- CI Gate 展示 Gitee PR 的真实检查结果，同时保留本地日志和录屏。
+- CI Gate 展示 GitHub PR 的真实检查结果，同时保留本地日志和录屏。
 - Code Review 使用真实 AI 审查输出；如平台 AI 能力不可用，使用事先保存的真实评审记录回放，不伪装为现场运行。
