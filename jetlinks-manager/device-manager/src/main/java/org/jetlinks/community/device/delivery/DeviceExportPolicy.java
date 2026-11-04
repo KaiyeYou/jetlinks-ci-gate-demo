@@ -39,6 +39,6 @@ public final class DeviceExportPolicy {
     }
 
     public static boolean isWithinLimit(int requestedRows) {
-        return requestedRows > 0 && requestedRows <= MAX_EXPORT_ROWS;
+        return requestedRows > 0 && requestedRows < MAX_EXPORT_ROWS;
     }
 }
