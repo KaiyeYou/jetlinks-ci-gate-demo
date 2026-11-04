@@ -51,7 +51,7 @@ export JAVA_HOME=/path/to/jdk-21
 
 这个门禁依次产生三类证据：
 
-1. `DeviceExportPolicy` 的 Java 17 + JUnit 5 单元测试；
+1. `DeviceExportPolicy` 的 JDK 21 + JUnit 5 单元测试；
 2. 设备导出接口是否关闭分页；
 3. Maven 直接依赖是否符合准入清单。
 

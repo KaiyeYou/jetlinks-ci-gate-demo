@@ -28,7 +28,7 @@ GitHub Actions 定义：
 
 Pull Request 指向 `demo/baseline` 时并行运行：
 
-1. `Unit tests`：Java 17 编译和 JUnit 5 测试；
+1. `Unit tests`：JDK 21 编译和 JUnit 5 测试；
 2. `Secret scan`：集中复检跟踪文件中的凭据；
 3. `Export safety`：禁止设备导出关闭分页；
 4. `Dependency admission`：新增直接依赖必须在准入清单内；
