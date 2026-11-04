@@ -1,0 +1,80 @@
+/*
+ * Copyright 2025 JetLinks https://www.jetlinks.cn
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.jetlinks.community.elastic.search.index;
+
+import org.hswebframework.ezorm.core.param.QueryParam;
+import reactor.core.publisher.Mono;
+
+import javax.annotation.Nullable;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * es 索引策略
+ *
+ * @author zhouhao
+ * @version 1.0
+ */
+public interface ElasticSearchIndexStrategy {
+
+    /**
+     * 策略标识
+     *
+     * @return ID
+     */
+    String getId();
+
+    /**
+     * 获取用于获取保存数据的索引
+     *
+     * @param index 原始索引名
+     * @return 索引名
+     */
+    String getIndexForSave(String index);
+
+    /**
+     * 获取用于搜索的索引
+     *
+     * @param index 原始索引名
+     * @return 索引名
+     */
+    String getIndexForSearch(String index);
+
+    default String getIndexForSave(ElasticSearchIndexMetadata index, Map<String, Object> data) {
+        return getIndexForSave(index.getIndex());
+    }
+
+    default List<String> getIndexForSearch(ElasticSearchIndexMetadata index, @Nullable QueryParam param) {
+        return Collections.singletonList(getIndexForSearch(index.getIndex()));
+    }
+
+    /**
+     * 更新索引
+     *
+     * @param metadata 索引元数据
+     * @return 更新结果
+     */
+    Mono<ElasticSearchIndexMetadata> putIndex(ElasticSearchIndexMetadata metadata);
+
+    /**
+     * 加载索引元数据
+     *
+     * @param index 索引
+     * @return 索引元数据
+     */
+    Mono<ElasticSearchIndexMetadata> loadIndexMetadata(String index);
+}

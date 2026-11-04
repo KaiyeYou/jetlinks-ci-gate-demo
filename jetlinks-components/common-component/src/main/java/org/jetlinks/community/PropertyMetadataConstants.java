@@ -1,0 +1,153 @@
+/*
+ * Copyright 2025 JetLinks https://www.jetlinks.cn
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.jetlinks.community;
+
+import org.jetlinks.community.utils.ConverterUtils;
+import org.jetlinks.core.config.ConfigKey;
+import org.jetlinks.core.message.DeviceMessage;
+import org.jetlinks.core.message.HeaderKey;
+import org.jetlinks.core.metadata.PropertyMetadata;
+import org.jetlinks.reactor.ql.utils.CastUtils;
+
+import java.util.*;
+
+public interface PropertyMetadataConstants {
+
+
+    /**
+     * 属性来源
+     */
+    interface Source {
+
+        //数据来源
+        String id = "source";
+
+        HeaderKey<String> headerKey = HeaderKey.of(id, null);
+
+        //手动写值
+        String manual = "manual";
+
+        //规则,虚拟属性
+        String rule = "rule";
+
+        static boolean isManual(DeviceMessage message) {
+            return message
+                .getHeader(Source.headerKey)
+                .map(Source.manual::equals)
+                .orElse(false);
+        }
+
+        static void setManual(DeviceMessage message) {
+            message.addHeader(headerKey, manual);
+        }
+
+        /**
+         * 判断属性是否手动赋值
+         *
+         * @param metadata 属性物模型
+         * @return 是否手动赋值
+         */
+        static boolean isManual(PropertyMetadata metadata) {
+            return metadata.getExpand(id)
+                           .map(manual::equals)
+                           .orElse(false);
+        }
+
+    }
+
+    /**
+     * 属性读写模式
+     */
+    interface AccessMode {
+        String id = "type";
+
+        //读
+        String read = "read";
+        //写
+        String write = "write";
+        //上报
+        String report = "report";
+
+        static boolean isRead(PropertyMetadata property) {
+            return property
+                .getExpand(id)
+                .map(val -> val.toString().contains(read))
+                .orElse(false);
+        }
+
+        static boolean isWrite(PropertyMetadata property) {
+            return property
+                .getExpand(id)
+                .map(val -> val.toString().contains(write))
+                .orElse(false);
+        }
+
+        static boolean isReport(PropertyMetadata property) {
+            return property
+                .getExpand(id)
+                .map(val -> val.toString().contains(report))
+                .orElse(false);
+        }
+    }
+
+    interface Metrics {
+        String id = "metrics";
+
+
+        static Map<String, Object> metricsToExpands(List<PropertyMetric> metrics) {
+            return Collections.singletonMap(id, metrics);
+        }
+
+        static List<PropertyMetric> getMetrics(PropertyMetadata metadata) {
+            return metadata
+                .getExpand(id)
+                .map(obj -> ConverterUtils.convertToList(obj, PropertyMetric::of))
+                .orElseGet(Collections::emptyList);
+        }
+
+        static Optional<PropertyMetric> getMetric(PropertyMetadata metadata, String metric) {
+            return metadata
+                .getExpand(id)
+                .map(obj -> {
+                    for (PropertyMetric propertyMetric : ConverterUtils.convertToList(obj, PropertyMetric::of)) {
+                        if (Objects.equals(metric, propertyMetric.getId())) {
+                            return propertyMetric;
+                        }
+                    }
+                    return null;
+                });
+        }
+
+    }
+
+    interface Group {
+        ConfigKey<String> id = ConfigKey.of("groupId", "分组ID", String.class);
+        ConfigKey<String> name = ConfigKey.of("groupName", "分组名称", String.class);
+
+
+        static String getId(PropertyMetadata metadata) {
+            return metadata
+                .getExpand(id)
+                .orElse("");
+        }
+
+        static String getName(PropertyMetadata metadata) {
+            return metadata
+                .getExpand(name)
+                .orElse("");
+        }
+    }
+}
