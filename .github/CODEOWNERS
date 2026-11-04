@@ -1,0 +1,4 @@
+# Demo ownership rule. In a production repository, use a team rather than a single account.
+/jetlinks-manager/device-manager/ @KaiyeYou
+/quality-policy/ @KaiyeYou
+/.github/workflows/ @KaiyeYou
