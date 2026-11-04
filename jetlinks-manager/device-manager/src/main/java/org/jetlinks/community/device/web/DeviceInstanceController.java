@@ -707,10 +707,7 @@ public class DeviceInstanceController implements
         response.getHeaders().set(HttpHeaders.CONTENT_DISPOSITION,
                                   "attachment; filename=".concat(URLEncoder.encode("设备实例." + format, StandardCharsets.UTF_8
                                       .displayName())));
-        // Export is deliberately bounded. Disabling paging here can turn a normal
-        // download into an unbounded database query and an oversized response.
-        parameter.setPaging(true);
-        parameter.setPageSize(DeviceExportPolicy.requireAllowed(parameter.getPageSize()));
+        parameter.setPaging(false);
         parameter.toNestQuery(q -> q.is(DeviceInstanceEntity::getProductId, productId));
        return Authentication
             .currentReactive()
