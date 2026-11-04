@@ -1,0 +1,83 @@
+name: Code Delivery Quality Gate
+
+on:
+  pull_request:
+    branches:
+      - demo/baseline
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Run focused Java tests
+        run: mvn -f delivery-guard-demo/pom.xml --batch-mode test
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@v4
+      - name: Scan tracked files
+        run: python3 scripts/quality/check_repository_secrets.py
+
+  export-safety:
+    name: Export safety
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@v4
+      - name: Verify bounded device export
+        run: ./scripts/quality/check-unbounded-device-export.sh
+
+  dependency-admission:
+    name: Dependency admission
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@v4
+      - name: Verify approved direct dependencies
+        run: python3 scripts/quality/check_dependency_policy.py
+
+  merge-gate:
+    name: Merge Gate
+    if: always()
+    needs:
+      - unit-tests
+      - secret-scan
+      - export-safety
+      - dependency-admission
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every deterministic check
+        env:
+          UNIT_TESTS: ${{ needs.unit-tests.result }}
+          SECRET_SCAN: ${{ needs.secret-scan.result }}
+          EXPORT_SAFETY: ${{ needs.export-safety.result }}
+          DEPENDENCY_ADMISSION: ${{ needs.dependency-admission.result }}
+        run: |
+          echo "unit-tests=$UNIT_TESTS"
+          echo "secret-scan=$SECRET_SCAN"
+          echo "export-safety=$EXPORT_SAFETY"
+          echo "dependency-admission=$DEPENDENCY_ADMISSION"
+          test "$UNIT_TESTS" = success
+          test "$SECRET_SCAN" = success
+          test "$EXPORT_SAFETY" = success
+          test "$DEPENDENCY_ADMISSION" = success
