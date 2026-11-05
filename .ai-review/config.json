@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "mode": "advisory",
+  "language": "zh-CN",
+  "max_diff_chars": 60000,
+  "max_related_files": 12,
+  "max_related_file_chars": 12000,
+  "contract_files": [
+    "docs/ai-review-contract.md",
+    ".github/pull_request_template.md",
+    ".github/CODEOWNERS"
+  ],
+  "review_dimensions": [
+    "业务边界与契约一致性",
+    "安全与权限",
+    "依赖与供应链",
+    "异常处理与资源上限",
+    "并发、幂等与事务",
+    "测试缺口与可观测性",
+    "注释、命名与提交说明是否与实现一致"
+  ],
+  "severity_policy": {
+    "critical": "可直接造成严重安全、数据或生产事故",
+    "high": "很可能造成错误结果、越权、数据损坏或明显不可用",
+    "medium": "存在可复现的边界、可靠性或维护风险",
+    "low": "有明确证据的轻微问题；不要报告纯风格偏好"
+  }
+}

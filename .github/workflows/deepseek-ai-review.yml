@@ -1,0 +1,89 @@
+name: DeepSeek AI Advisory Review
+
+on:
+  pull_request:
+    branches:
+      - demo/baseline
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: deepseek-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: DeepSeek semantic review (advisory)
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout trusted reviewer from base commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: reviewer
+          sparse-checkout: |
+            .ai-review
+            scripts/ai_review
+            scripts/quality/check_repository_secrets.py
+
+      - name: Checkout pull request for read-only analysis
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          path: target
+
+      - name: Fetch base commit
+        working-directory: target
+        run: git fetch --no-tags origin ${{ github.event.pull_request.base.sha }}
+
+      - name: Check whether trusted reviewer is installed on the base branch
+        id: reviewer_installation
+        shell: bash
+        run: |
+          if [[ -f reviewer/scripts/ai_review/review_pr.py ]]; then
+            echo "installed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "installed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::First installation detected; DeepSeek review starts after this configuration is merged."
+          fi
+
+      - name: Prevent credentials from being sent to an external model
+        id: outbound_secret_scan
+        if: steps.reviewer_installation.outputs.installed == 'true'
+        continue-on-error: true
+        working-directory: target
+        run: python3 ../reviewer/scripts/quality/check_repository_secrets.py --root .
+
+      - name: Run advisory DeepSeek review
+        if: >-
+          steps.reviewer_installation.outputs.installed == 'true' &&
+          steps.outbound_secret_scan.outcome == 'success'
+        working-directory: target
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_BASE_URL: ${{ vars.DEEPSEEK_BASE_URL || 'https://api.deepseek.com' }}
+          DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL || 'deepseek-flash' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          python3 ../reviewer/scripts/ai_review/review_pr.py
+          --repo .
+          --config ../reviewer/.ai-review/config.json
+          --prompt ../reviewer/.ai-review/system-prompt.md
+          --base ${{ github.event.pull_request.base.sha }}
+          --head ${{ github.event.pull_request.head.sha }}
+
+      - name: Explain why external AI review was skipped
+        if: >-
+          steps.reviewer_installation.outputs.installed == 'true' &&
+          steps.outbound_secret_scan.outcome != 'success'
+        run: >-
+          echo '::warning::DeepSeek review skipped because the outbound secret scan found
+          possible credentials. Deterministic CI remains authoritative.'
