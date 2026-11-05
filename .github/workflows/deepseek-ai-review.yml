@@ -26,7 +26,7 @@ jobs:
       - name: Checkout trusted reviewer from base commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ github.event.pull_request.base.ref }}
           path: reviewer
           sparse-checkout: |
             .ai-review
@@ -40,9 +40,15 @@ jobs:
           fetch-depth: 0
           path: target
 
+      - name: Resolve current protected base commit
+        id: trusted_base
+        working-directory: reviewer
+        shell: bash
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Fetch base commit
         working-directory: target
-        run: git fetch --no-tags origin ${{ github.event.pull_request.base.sha }}
+        run: git fetch --no-tags origin ${{ steps.trusted_base.outputs.sha }}
 
       - name: Check whether trusted reviewer is installed on the base branch
         id: reviewer_installation
@@ -77,7 +83,7 @@ jobs:
           --repo .
           --config ../reviewer/.ai-review/config.json
           --prompt ../reviewer/.ai-review/system-prompt.md
-          --base ${{ github.event.pull_request.base.sha }}
+          --base ${{ steps.trusted_base.outputs.sha }}
           --head ${{ github.event.pull_request.head.sha }}
 
       - name: Explain why external AI review was skipped
